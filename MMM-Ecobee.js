@@ -10,6 +10,8 @@ var appKey = 'hjWaoxNkuekmvRUyDY5v8yWyA0hfxCel'
 var hasCode = false;
 var hasToken = false;
 var key = "tempToken ****";
+var pinWorking = false;
+var pin = " ";
 
 
 Module.register("MMM-Ecobee", {
@@ -21,7 +23,7 @@ Module.register("MMM-Ecobee", {
     displayType: "visual",		//Show a visual representation or list: "visual", "list"
     displayMode: "both",		//What to show: "nest", "protect", or "both"
     units: config.units,
-    updateInterval: 5 * 60 * 1000, // updates every minute per Nest's recommendation
+    updateInterval: 5 * 60 * 1000, // updates every minute
     animationSpeed: 2 * 1000,
     initialLoadDelay: 0,
     authorization_token: "nada",
@@ -30,37 +32,23 @@ Module.register("MMM-Ecobee", {
     header: "ecobee Thermostat"
   },
 
-  getHeader: function () {
-    this.data.header = "ecobee Thermostat";
-    return "ecobee Thermostat";
-  },
   getStyles: function() {
     return ["MMM-Ecobee.css"];
   },
 
   getDom: function () {
     //var wrapper = document.createElement("div");
+    var wrapper = document.createElement("table");
+    wrapper.className = "small dimmed";
 
-    if (!hasCode){
-      wrapper.innerHTML = "You need to authorized the ecoBee module in your account here's your PIN: " +
-          this.defaults.pin + " and here is your authorization code: " + this.defaults.authorization_token;
-    } else if (hasCode && !hasToken){
-      wrapper.innerHTML = "Now you need to add those values to your CONFIG.JS: <br>" +
-                            "Access Token: " + this.defaults.access_token + "<br>" +
-                            "Refresh Token: " + this.defaults.refresh_token;
-    } else{
-      var wrapper = document.createElement("table");
-      wrapper.className = "small";
-      //var replyTemp = {"page":{"page":1,"totalPages":1,"pageSize":1,"total":1},"thermostatList":[{"identifier":"411996713366","name":"Upstairs","thermostatRev":"180330152955","isRegistered":true,"modelNumber":"nikeSmart","brand":"ecobee","features":"HomeKit","lastModified":"2018-03-30 15:29:55","thermostatTime":"2018-03-30 13:05:43","utcTime":"2018-03-30 17:05:43","runtime":{"runtimeRev":"180330170026","connected":true,"firstConnected":"2018-01-21 23:02:05","connectDateTime":"2018-03-30 14:34:13","disconnectDateTime":"2018-03-20 22:56:35","lastModified":"2018-03-30 16:15:44","lastStatusModified":"2018-03-30 17:00:26","runtimeDate":"2018-03-30","runtimeInterval":203,"actualTemperature":722,"actualHumidity":66,"desiredHeat":700,"desiredCool":780,"desiredHumidity":36,"desiredDehumidity":60,"desiredFanMode":"auto","desiredHeatRange":[450,790],"desiredCoolRange":[650,920]},"remoteSensors":[{"id":"rs:100","name":"Kids' Room","type":"ecobee3_remote_sensor","code":"SGFS","inUse":true,"capability":[{"id":"1","type":"temperature","value":"721"},{"id":"2","type":"occupancy","value":true}]},{"id":"rs:101","name":"guest bedroom","type":"ecobee3_remote_sensor","code":"SGFX","inUse":true,"capability":[{"id":"1","type":"temperature","value":"720"},{"id":"2","type":"occupancy","value":"false"}]},{"id":"ei:0","name":"Upstairs","type":"thermostat","inUse":true,"capability":[{"id":"1","type":"temperature","value":"725"},{"id":"2","type":"humidity","value":"66"}]}]}],"status":{"code":0,"message":""}};
-
-
-      if (this.tempData.length === 0){
-        wrapper.innerHTML = "EMPTY";
-        wrapper.className = "small dimmed";
-        return wrapper;
-      };
-
-      Log.info("DOM UPDATED !!");
+    if (this.tempData.length === 0) {  //No data was received and PIN is not working
+      wrapper.innerHTML = "These are the steps authorize this application to access your Ecobee 3:<br>" +
+          "  1. Go to https://www.ecobee.com/home/ecobeeLogin.jsp<br>" +
+          "  2. Login to your thermostat console <br>" +
+          "  3. Select 'MY APPS' from the menu on the top right.<br>" +
+          "  4. Click 'Add Application' <br>" +
+          "  5. Enter the following authorization code: " + "<b>" + pin + "</b>";
+    }else {
       //iterate tru the reply list for all thermostats
       for (var e in this.tempData.thermostatList){
         var thermo = this.tempData.thermostatList[e];
@@ -181,38 +169,23 @@ Module.register("MMM-Ecobee", {
         };
 
       };
-    };
+    }
     return wrapper;
-  },
+  }, //END OF getDom
 
   // Define start sequence.
   start: function () {
     Log.info("Starting module: " + this.name);
 
-    Log.info("SETTING ARRAY !!!  MAKING SURE THIS DOESN'T RESET!");
     this.tempData = new Array();
+    var key = " ";
+    this.sendSocketNotification("UPDATE_SENSORS", key);
+    this.scheduleUpdate();
 
-    if (this.config.pin.length < 1){  //No PIN on CONFIG.JS
-      this.getPin();
-    }else {
-      hasCode = true;
-    };
-
-    if (this.config.pin.length > 1 && (this.config.access_token.length < 1 || this.config.refresh_token.length < 1)) { //Have PIN but no Token
-      this.getToken();
-    } else if (this.config.pin.length > 1 && (this.config.access_token.length > 1 || this.config.refresh_token.length > 1)){
-      hasToken = true;
-     // this.getTemp();
-      var key = "oxpNFaOtogZVRzM5UWcT502DkUIfWooE";
-      //update the Sensors
-      this.sendSocketNotification("UPDATE_SENSORS", key);
-      this.scheduleUpdate();
-      //this.retriveTokenFile();
-    };
-    },
+    }, ///End of START
 
 
-  //Retrive the token.txt content
+  //Retrive the token.json content
   retriveTokenFile: function () {
     console.log("**** Retriving Token Notification");
     this.sendSocketNotification("RETRIVE_TOKENS", key);
@@ -229,12 +202,19 @@ Module.register("MMM-Ecobee", {
   },
 
   socketNotificationReceived: function (notification, payload) {
-    var self = this;
+    self = this;
      Log.info("**** Ready to receive");
     if (notification === "UPDATE_MAIN_INFO"){
       Log.info("received the payload with the information to update!");
       this.tempData = payload;
       Log.info("1 - XXXXXXXXXX" + this.tempData.thermostatList[0].name);
+      this.updateDom();
+    }
+    if (notification === "UPDATE_PIN"){  // No working pin was received
+      pinWorking = false;
+      this.tempData = [];
+      pin = payload;
+      Log.info("@@@@@@  Updating DOM and PIn with this pin: " + pin);
       this.updateDom();
     }
   },
