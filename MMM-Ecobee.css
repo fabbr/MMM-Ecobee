@@ -1,0 +1,12 @@
+.MMM-Ecobee .icon {
+  padding-left: 0;
+  padding-right: 15px;
+  align-items: left;
+}
+.MMM-Ecobee .header {
+  border-bottom: none; /* instead of 1px solid #666; to remove all lines from all the headers */
+  width: 50%;          /* add this to change the width of all module headers */
+}
+.MMM-Ecobee .current_temp{
+  padding-right: 5px;
+}
