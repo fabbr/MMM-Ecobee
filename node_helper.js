@@ -37,10 +37,10 @@ module.exports = NodeHelper.create({
   },
 
   updateTokenFiles: function (toWriteKeys) {
-    fs.writeFile(configFilename, toWriteKeys); //, function (err) {
-   //   if (err) throw err;
-    //  console.log('Saved!');
-    //});
+    fs.writeFile(configFilename, toWriteKeys, function (err) {
+      if (err) throw err;
+     console.log('Saved!');
+    });
   },
 
   //Trying update Sensors
