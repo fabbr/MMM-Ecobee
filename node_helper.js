@@ -11,7 +11,7 @@ var configFilename = path.resolve(__dirname + filename);
 //Tokens
 var access_token = 0;
 var refresh_token = 0;
-var appKey = 'hjWaoxNkuekmvRUyDY5v8yWyA0hfxCel';
+var appKey = 'jY03ZxGNFWNpPxQJ03vviHL028l8zGZT';
 var pin = " ";
 var code = " ";
 
@@ -39,7 +39,7 @@ module.exports = NodeHelper.create({
   updateTokenFiles: function (toWriteKeys) {
     fs.writeFile(configFilename, toWriteKeys, function (err) {
       if (err) throw err;
-      console.log('Saved!');
+     console.log('Saved!');
     });
   },
 
@@ -278,7 +278,7 @@ module.exports = NodeHelper.create({
     // obj.Tokens.push({access_token: access_token, refresh_token: refresh_token});
     var obj = {access_token: accessToken, refresh_token: refreshToken};
     var json = JSON.stringify(obj);
-    fs.writeFile (configFilename, json, 'utf8');
+    fs.writeFileSync (configFilename, json, 'utf8');
   },
 
 
